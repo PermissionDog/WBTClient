@@ -4,6 +4,7 @@
 // @version      0.2
 // @description  一起看B客户端
 // @author       PermissionDog
+// @updateURL    https://permissiondog.github.io/WBTClient/app/wtbclient.user.js
 // @match        https://www.bilibili.com/*
 // @connect      bilibili.com
 // @connect      hdslb.com
@@ -17,6 +18,6 @@
 (function () {
     'use strict';
 
-    GM_log("2333");
+    GM_log("23333");
 
 })();
