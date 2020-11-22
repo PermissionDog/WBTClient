@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        const url = 'wss://45.253.67.78:54911/room/114514/ws';
+        let ws = new WebSocket(url);
+        ws.onopen = function () {
+            console.log(`${url} 连接成功!`);
+        }
+        ws.onclose = function () {
+            console.log(`${url} 连接关闭`);
+        }
+        ws.onerror = function () {
+            if (ws) {
+                ws.close();
+                ws = null;
+            }
+            console.log(`${url} 连接因错误关闭!`);
+        }
+        ws.onmessage = function (msg) {
+            console.log(msg.data)
+        }
+    </script>
+</body>
+</html>
