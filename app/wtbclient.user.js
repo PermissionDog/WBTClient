@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WTBClient
 // @namespace    github.com/PermissionDog/WTBClient
-// @version      0.1
+// @version      0.2
 // @description  一起看B客户端
 // @author       PermissionDog
 // @match        https://www.bilibili.com/*
