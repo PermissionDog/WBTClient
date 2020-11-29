@@ -1,7 +1,5 @@
 <!-- 引入样式 -->
 <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
-
-<!--https://element.eleme.cn/#/zh-CN/component/drawer-->
 <style>
   #wtb-nav {
     position: fixed;
@@ -25,12 +23,15 @@
       <el-button @click="roomListVisible = true" type="primary" icon="el-icon-film" circle></button>
     </el-row>
     <el-row>
+      <el-button @click="" type="primary" icon="el-icon-video-play" circle></el-button>
+    </el-row>
+    <el-row>
       <el-button @click="settingVisible = true" type="primary" icon="el-icon-s-tools" circle></button>
     </el-row>
   </div>
 
 
-  <el-drawer :with-header="false" :visible.sync="roomListVisible" direction="rtl" size="50%">
+  <el-drawer :with-header="false" :visible.sync="roomListVisible" direction="rtl" size="45%" v-on:open="loadRoomList">
     <template>
       <el-table :data="roomListData" stripe style="width: 100%">
         <el-table-column prop="bv"></el-table-column>
@@ -38,13 +39,14 @@
         <el-table-column>
           <template slot-scope="scope">
             <div v-for="user in roomListData[scope.$index].users" style="display: inline-block;">
-              <el-image :src="user.face" style="width: 50px; height: 50px;"></el-image>
+              <el-image :src="user.face" style="width: 35px; height: 35px;"></el-image>
             </div>
           </template>
         </el-table-column>
+        <el-table-column prop="state"></el-table-column>
         <el-table-column><template slot-scope="scope">
-          <el-button @click="print(scope)" size="mini">加入</el-button>
-        </template></el-table-column>
+            <el-button @click="print(scope)" size="mini">加入</el-button>
+          </template></el-table-column>
       </el-table>
     </template>
   </el-drawer>

@@ -13,12 +13,58 @@ var wtbApp = new Vue({
                     uid: 386900246,
                     face: "http://i0.hdslb.com/bfs/face/53cbed71f197e4b774d16aa2f8a27d32870c7bba.jpg"
                 }],
+            roomID: 213424,
+            state: "PAUSED"
         }]
 
     },
     methods: {
         print: function (v) {
             console.log(v);
+        },
+        loadRoomList: function () {
+            let a = []
+            
+            this.$http.get('https://cn-xz-bgp.sakurafrp.com:54911/room')
+            .then(data => {
+                let d = data.body;
+                data.userIDs = [];
+                d.forEach(ele => {
+                    ele.users.forEach(user => {
+                        data.userIDs.push(user);
+                    });
+                });
+                return new Promise((resolve, reject) => {
+                    
+                    data.userInfo = {};
+                    Promise.all(data.userIDs.map(ele => {
+                        return bili.api.userInfo(ele);
+                    })).then(values => {
+                        values.forEach(v => {
+                            data.userInfo[v.mid] = v;
+                        });
+                        resolve(data);
+                    }).catch(e => reject(e));
+                }); 
+            })
+            .then(data => {
+                let d = data.body;
+                this.roomListData = [];
+                d.forEach(ele => {
+                    this.roomListData.push({
+                        bv: ele.bv,
+                        roomID: ele.roomid,
+                        users: ele.users.map(user => {
+                            return {
+                                uid: user,
+                                face: data.userInfo[user].face
+                            };
+                        }),
+                        state: ele.state
+                    });
+                });
+            })
+            .catch(e => console.log(e));
         }
     }
 });

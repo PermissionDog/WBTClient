@@ -27,5 +27,8 @@ func replaceFile(dstFile string, srcFile string, regex string) {
 	res := strings.ReplaceAll(string(dst), string(find), string(src))
 	//res := reg.ReplaceAll(dst, src)
 	//fmt.Println(string(res))
-	panicioutil.WriteFile(dstFile, []byte(res), 0))
+	err = ioutil.WriteFile(dstFile, []byte(res), 0)
+	if err != nil {
+		panic(err)
+	}
 }

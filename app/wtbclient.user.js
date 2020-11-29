@@ -19,11 +19,8 @@
 (function () {
     'use strict';
 
-    const injectHTML = `
-    <!-- 引入样式 -->
+    const injectHTML = `<!-- 引入样式 -->
 <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
-
-<!--https://element.eleme.cn/#/zh-CN/component/drawer-->
 <style>
   #wtb-nav {
     position: fixed;
@@ -47,12 +44,15 @@
       <el-button @click="roomListVisible = true" type="primary" icon="el-icon-film" circle></button>
     </el-row>
     <el-row>
+      <el-button @click="" type="primary" icon="el-icon-video-play" circle></el-button>
+    </el-row>
+    <el-row>
       <el-button @click="settingVisible = true" type="primary" icon="el-icon-s-tools" circle></button>
     </el-row>
   </div>
 
 
-  <el-drawer :with-header="false" :visible.sync="roomListVisible" direction="rtl" size="50%">
+  <el-drawer :with-header="false" :visible.sync="roomListVisible" direction="rtl" size="45%" v-on:open="loadRoomList">
     <template>
       <el-table :data="roomListData" stripe style="width: 100%">
         <el-table-column prop="bv"></el-table-column>
@@ -60,46 +60,90 @@
         <el-table-column>
           <template slot-scope="scope">
             <div v-for="user in roomListData[scope.$index].users" style="display: inline-block;">
-              <el-image :src="user.face" style="width: 100px; height: 100px;"></el-image>
+              <el-image :src="user.face" style="width: 35px; height: 35px;"></el-image>
             </div>
           </template>
         </el-table-column>
+        <el-table-column prop="state"></el-table-column>
         <el-table-column><template slot-scope="scope">
-          <el-button @click="print(scope)" size="mini">加入</el-button>
-        </template></el-table-column>
+            <el-button @click="print(scope)" size="mini">加入</el-button>
+          </template></el-table-column>
       </el-table>
     </template>
   </el-drawer>
 
-</div>
-    `;
-    const injectJS = `
-    
-    var wtbApp = new Vue({
-        el: '#wtb',
-        data: {
-            roomListVisible: false,
-            settingVisible: false,
-            roomListData: [{
-                bv: "BV1kf4y1v7RN",
-                users: [
-                    {
-                        uid: 25321764,
-                        face: "http://i0.hdslb.com/bfs/face/08a66d15ebd9862175213d9e2f8d912d0d646b71.jpg"
-                    }, { 
-                        uid: 386900246,
-                        face: "http://i0.hdslb.com/bfs/face/53cbed71f197e4b774d16aa2f8a27d32870c7bba.jpg"
-                    }],
-            }]
-    
+</div>`;
+    const injectJS = `var wtbApp = new Vue({
+    el: '#wtb',
+    data: {
+        roomListVisible: false,
+        settingVisible: false,
+        roomListData: [{
+            bv: "BV1kf4y1v7RN",
+            users: [
+                {
+                    uid: 25321764,
+                    face: "http://i0.hdslb.com/bfs/face/08a66d15ebd9862175213d9e2f8d912d0d646b71.jpg"
+                }, { 
+                    uid: 386900246,
+                    face: "http://i0.hdslb.com/bfs/face/53cbed71f197e4b774d16aa2f8a27d32870c7bba.jpg"
+                }],
+            roomID: 213424,
+            state: "PAUSED"
+        }]
+
+    },
+    methods: {
+        print: function (v) {
+            console.log(v);
         },
-        methods: {
-            print: function (v) {
-                console.log(v);
-            }
+        loadRoomList: function () {
+            let a = []
+            
+            this.$http.get('https://cn-xz-bgp.sakurafrp.com:54911/room')
+            .then(data => {
+                let d = data.body;
+                data.userIDs = [];
+                d.forEach(ele => {
+                    ele.users.forEach(user => {
+                        data.userIDs.push(user);
+                    });
+                });
+                return new Promise((resolve, reject) => {
+                    
+                    data.userInfo = {};
+                    Promise.all(data.userIDs.map(ele => {
+                        return bili.api.userInfo(ele);
+                    })).then(values => {
+                        values.forEach(v => {
+                            data.userInfo[v.mid] = v;
+                        });
+                        resolve(data);
+                    }).catch(e => reject(e));
+                }); 
+            })
+            .then(data => {
+                let d = data.body;
+                this.roomListData = [];
+                d.forEach(ele => {
+                    this.roomListData.push({
+                        bv: ele.bv,
+                        roomID: ele.roomid,
+                        users: ele.users.map(user => {
+                            return {
+                                uid: user,
+                                face: data.userInfo[user].face
+                            };
+                        }),
+                        state: ele.state
+                    });
+                });
+            })
+            .catch(e => console.log(e));
         }
-    });
-    `;
+    }
+});
+`;
 
 
     function loadJS(js) {
@@ -112,6 +156,7 @@
     }
     loadJS('https://cdn.jsdelivr.net/npm/vue/dist/vue.js')
         .then(() => loadJS('https://unpkg.com/element-ui/lib/index.js'))
+        .then(() => loadJS('https://cdn.jsdelivr.net/npm/vue-resource@1.5.1'))
         .then(() => {
             let s2 = document.createElement('div');
             s2.innerHTML = injectHTML;
