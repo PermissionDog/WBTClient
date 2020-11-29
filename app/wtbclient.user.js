@@ -5,7 +5,6 @@
 // @description  一起看B客户端
 // @author       PermissionDog
 // @updateURL    https://permissiondog.github.io/WBTClient/app/wtbclient.user.js
-// @run-at       document-end
 // @match        https://www.bilibili.com/*
 // @connect      bilibili.com
 // @connect      hdslb.com
@@ -14,10 +13,112 @@
 // @grant        GM_notification
 // @grant        window
 // @grant        document
+// @grant        unsafeWindow
 // ==/UserScript==
 
 (function () {
     'use strict';
+
+    const injectHTML = `
+    <!-- 引入样式 -->
+<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+
+<!--https://element.eleme.cn/#/zh-CN/component/drawer-->
+<style>
+  #wtb-nav {
+    position: fixed;
+    right: 0;
+    top: 40%
+  }
+
+  .el-row {
+    margin-bottom: 10px;
+  }
+
+  [v-cloak] {
+    display: none;
+  }
+</style>
+
+
+<div id="wtb" v-cloak>
+  <div id="wtb-nav">
+    <el-row>
+      <el-button @click="roomListVisible = true" type="primary" icon="el-icon-film" circle></button>
+    </el-row>
+    <el-row>
+      <el-button @click="settingVisible = true" type="primary" icon="el-icon-s-tools" circle></button>
+    </el-row>
+  </div>
+
+
+  <el-drawer :with-header="false" :visible.sync="roomListVisible" direction="rtl" size="50%">
+    <template>
+      <el-table :data="roomListData" stripe style="width: 100%">
+        <el-table-column prop="bv"></el-table-column>
+        <el-table-column prop="title"></el-table-column>
+        <el-table-column>
+          <template slot-scope="scope">
+            <div v-for="user in roomListData[scope.$index].users" style="display: inline-block;">
+              <el-image :src="user.face" style="width: 100px; height: 100px;"></el-image>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column><template slot-scope="scope">
+          <el-button @click="print(scope)" size="mini">加入</el-button>
+        </template></el-table-column>
+      </el-table>
+    </template>
+  </el-drawer>
+
+</div>
+    `;
+    const injectJS = `
+    
+    var wtbApp = new Vue({
+        el: '#wtb',
+        data: {
+            roomListVisible: false,
+            settingVisible: false,
+            roomListData: [{
+                bv: "BV1kf4y1v7RN",
+                users: [
+                    {
+                        uid: 25321764,
+                        face: "http://i0.hdslb.com/bfs/face/08a66d15ebd9862175213d9e2f8d912d0d646b71.jpg"
+                    }, { 
+                        uid: 386900246,
+                        face: "http://i0.hdslb.com/bfs/face/53cbed71f197e4b774d16aa2f8a27d32870c7bba.jpg"
+                    }],
+            }]
+    
+        },
+        methods: {
+            print: function (v) {
+                console.log(v);
+            }
+        }
+    });
+    `;
+
+
+    function loadJS(js) {
+        return new Promise(resolve => {
+            let s = document.createElement('script');
+            s.src = js;
+            s.onload = resolve;
+            document.head.appendChild(s);
+        });
+    }
+    loadJS('https://cdn.jsdelivr.net/npm/vue/dist/vue.js')
+        .then(() => loadJS('https://unpkg.com/element-ui/lib/index.js'))
+        .then(() => {
+            let s2 = document.createElement('div');
+            s2.innerHTML = injectHTML;
+            
+            document.body.appendChild(s2);
+            unsafeWindow.eval(injectJS);
+        });
 
     const bili = {
         util: {
@@ -178,10 +279,15 @@
         },
         bPlayer: document.querySelector('.bilibili-player-video > video')
     };
-
+    
     if (!bili.bPlayer) {
         return;
     }
+
+    unsafeWindow.bili = bili;
+    
+
+    
     //bili.sessions().then(data => GM_log(data)).catch(err => GM_log(err));
     GM_log(bili.bPlayer);
     bili.bPlayer.onpause = function () {
@@ -190,4 +296,9 @@
     bili.bPlayer.onplay = function () {
         GM_log('已播放!');
     };
+
+    
+    
+    GM_log(unsafeWindow);
+    
 })();
