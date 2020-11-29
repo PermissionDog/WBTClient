@@ -15,7 +15,11 @@ var wtbApp = new Vue({
                 }],
             roomID: 213424,
             state: "PAUSED"
-        }]
+        }],
+
+        createOrDestroyIcon: "el-icon-plus",
+        room: 0,//0为不在房间里 非0在房间里
+        isHost: false
 
     },
     methods: {
@@ -64,6 +68,23 @@ var wtbApp = new Vue({
                 });
             })
             .catch(e => console.log(e));
+        },
+        createOrDestroyRoom: function () {
+            if (this.room == 0) {
+                this.createOrDestroyIcon = "el-icon-minus";
+                //创建房间
+                
+                this.$http.get(`https://cn-xz-bgp.sakurafrp.com:54911/room`);
+                this.paused = !this.paused;
+            } else {
+                this.createOrDestroyIcon = "el-icon-plus";
+                //销毁房间
+                this.room = 0;
+                a = ``;
+            }
+        },
+        leaveRoom: function () {
+            
         }
     }
 });

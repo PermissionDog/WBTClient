@@ -25,7 +25,7 @@
   #wtb-nav {
     position: fixed;
     right: 0;
-    top: 40%
+    top: 35%
   }
 
   .el-row {
@@ -44,7 +44,10 @@
       <el-button @click="roomListVisible = true" type="primary" icon="el-icon-film" circle></button>
     </el-row>
     <el-row>
-      <el-button @click="" type="primary" icon="el-icon-video-play" circle></el-button>
+      <el-button @click="createOrDestroyRoom" type="primary" :icon="createOrDestroyIcon" circle></el-button>
+    </el-row>
+    <el-row  v-show="room">
+      <el-button @click="leaveRoom" type="primary" icon="el-icon-circle-close" circle></el-button>
     </el-row>
     <el-row>
       <el-button @click="settingVisible = true" type="primary" icon="el-icon-s-tools" circle></button>
@@ -66,7 +69,7 @@
         </el-table-column>
         <el-table-column prop="state"></el-table-column>
         <el-table-column><template slot-scope="scope">
-            <el-button @click="print(scope)" size="mini">加入</el-button>
+            <el-button @click="print(scope)">加入</el-button>
           </template></el-table-column>
       </el-table>
     </template>
@@ -90,7 +93,12 @@
                 }],
             roomID: 213424,
             state: "PAUSED"
-        }]
+        }],
+
+        createOrDestroyIcon: "el-icon-plus",
+        room: 0,
+        inRoom: false,
+        isHost: false
 
     },
     methods: {
@@ -139,6 +147,23 @@
                 });
             })
             .catch(e => console.log(e));
+        },
+        createOrDestroyRoom: function () {
+            if (this.room == 0) {
+                this.createOrDestroyIcon = "el-icon-minus";
+                //创建房间
+                
+
+                this.paused = !this.paused;
+            } else {
+                this.createOrDestroyIcon = "el-icon-plus";
+                //销毁房间
+                this.room = 0;
+                this.inRoom = false;
+            }
+        },
+        leaveRoom: function () {
+            
         }
     }
 });
