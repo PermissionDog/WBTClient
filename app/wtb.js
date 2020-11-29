@@ -23,7 +23,6 @@ var wtbApp = new Vue({
             console.log(v);
         },
         loadRoomList: function () {
-            let a = []
             
             this.$http.get('https://cn-xz-bgp.sakurafrp.com:54911/room')
             .then(data => {
