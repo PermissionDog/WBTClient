@@ -75,7 +75,7 @@
     </template>
   </el-drawer>
 
-</div>`;
+</div>`;//END_OF_INJECT_HTML
     const injectJS = `var wtbApp = new Vue({
     el: '#wtb',
     data: {
@@ -167,7 +167,7 @@
         }
     }
 });
-`;
+`;//END_OF_INJECT_JS
 
 
     function loadJS(js) {

@@ -7,8 +7,8 @@ import (
 )
 
 func main() {
-	replaceFile("app/wtbclient.user.js", "app/wtb.js", "(?sU)injectJS\\s=\\s`(.+)`")
-	replaceFile("app/wtbclient.user.js", "app/wtb.html", "(?sU)injectHTML\\s=\\s`(.+)`")
+	replaceFile("app/wtbclient.user.js", "app/wtb.js", "(?sU)injectJS\\s=\\s`(.+)`;//END_OF_INJECT_JS")
+	replaceFile("app/wtbclient.user.js", "app/wtb.html", "(?sU)injectHTML\\s=\\s`(.+)`;//END_OF_INJECT_HTML")
 }
 
 func replaceFile(dstFile string, srcFile string, regex string) {
