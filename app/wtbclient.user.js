@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WTBClient
 // @namespace    github.com/PermissionDog/WTBClient
-// @version      0.3
+// @version      0.4
 // @description  一起看B客户端
 // @author       PermissionDog
 // @updateURL    https://permissiondog.github.io/WBTClient/app/wtbclient.user.js
@@ -14,7 +14,7 @@
 // @grant        window
 // @grant        document
 // @grant        unsafeWindow
-// @run-at       document-body
+// @run-at       document-end
 // ==/UserScript==
 
 (function () {
