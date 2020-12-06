@@ -7,7 +7,7 @@ var wtbApp = new Vue({
     data: {
         roomListVisible: false,
         settingVisible: false,
-        roomListData: [{
+        roomListData: [/*{
             bv: "BV1kf4y1v7RN",
             users: [
                 {
@@ -19,7 +19,7 @@ var wtbApp = new Vue({
                 }],
             roomID: 213424,
             state: "PAUSED"
-        }],
+        }*/],
 
         createOrDestroyIcon: "el-icon-plus",
         room: 0,//0为不在房间里 非0在房间里
@@ -108,6 +108,17 @@ var wtbApp = new Vue({
                 this.$message.warning('你已经在一个房间中了!');
                 return;
             }
+
+            const room = this.getRoom(roomID);
+            if (!room) {
+                this.$message.warning('房间不存在');
+                return;
+            }
+            if (room.bv != this.bv) {
+                //跳转到bv号对应页面
+                window.open(`https://www.bilibili.com/video/${room.bv}`);
+                return;
+            }
             
             const url = `${WS_HOST}/room/${roomID}/ws`;
             this.ws = new WebSocket(url);
@@ -137,6 +148,7 @@ var wtbApp = new Vue({
                 console.log(msg);
 
                 const data = JSON.parse(msg.data);
+                let temp;
                 switch (data.type) {
                     case 'JOIN':
                         //有人加入
@@ -150,12 +162,23 @@ var wtbApp = new Vue({
                         bili.bPlayer.currentTime = (new Date().getTime() - data.startTime) / 1000 +
                             data.startPosition;
 
-                        bili.bPlayer.play().catch(err => showErr(err));
+                        temp = bili.bPlayer.onplay;
+                        bili.bPlayer.onplay = null;
+                        bili.bPlayer.play().then(() => bili.bPlayer.onplay = temp)
+                            .catch(err => {
+                                showErr(err);
+                                bili.bPlayer.onplay = temp;
+                        });
+                        
                         break;
 
                     case 'PAUSE':
                         //暂停
+                        
+                        temp = bili.bPlayer.onpause;
+                        bili.bPlayer.onpause = null;
                         bili.bPlayer.pause();
+                        bili.bPlayer.onpause = temp;
                         break;
                 }
             };
@@ -170,6 +193,14 @@ var wtbApp = new Vue({
         showErr: function (err) {
             this.$message.error('发生了一个错误!请打开F12查看详情');
             console.log(err);
+        },
+        getRoom: function (roomID) {
+            for (const room of this.roomListData) {
+                if (room.roomID == roomID) {
+                    console.log(room);
+                    return room;
+                }
+            }
         }
     }
 });
@@ -219,3 +250,4 @@ bili.api.myUserInfo().then(data => {
     console.log("初始化失败");
 });
 
+wtbApp.loadRoomList();
