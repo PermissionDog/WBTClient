@@ -161,19 +161,24 @@ var wtbApp = new Vue({
                     case 'START':
                         //播放;
 
-                        this.count += 2;
+                        this.count++;
                         bili.bPlayer.currentTime = (new Date().getTime() - data.startTime) / 1000 +
                             data.startPosition;
 
-                        bili.bPlayer.play().catch(err => {
-                            showErr(err);
-                            this.count -= 2;
-                        });
+                        if (bili.bPlayer.paused) {
+                            this.count++;
+                            bili.bPlayer.play().catch(err => {
+                                showErr(err);
+                            });
+                        }
 
                         break;
 
                     case 'PAUSE':
                         //暂停
+                        if (bili.bPlayer.paused) {
+                            break;
+                        }
                         this.count++;
                         bili.bPlayer.pause();
                         break;
