@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         WTBClient
 // @namespace    github.com/PermissionDog/WTBClient
-// @version      0.7
+// @version      0.8
 // @description  一起看B客户端
 // @author       PermissionDog
 // @updateURL    https://permissiondog.github.io/WBTClient/app/wtbclient.user.js
@@ -304,7 +304,7 @@ bili.api.myUserInfo().then(data => {
             return;
         }
         if (wtbApp.count) {
-            count--;
+            wtbApp.count--;
             return;
         }
 
@@ -322,7 +322,7 @@ bili.api.myUserInfo().then(data => {
             return;
         }
         if (wtbApp.count) {
-            count--;
+            wtbApp.count--;
             return;
         }
 

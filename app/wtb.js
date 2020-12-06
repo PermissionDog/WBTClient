@@ -225,7 +225,7 @@ bili.api.myUserInfo().then(data => {
             return;
         }
         if (wtbApp.count) {
-            count--;
+            wtbApp.count--;
             return;
         }
 
@@ -243,7 +243,7 @@ bili.api.myUserInfo().then(data => {
             return;
         }
         if (wtbApp.count) {
-            count--;
+            wtbApp.count--;
             return;
         }
 
