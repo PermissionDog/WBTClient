@@ -5,7 +5,7 @@
 // @description  一起看B客户端
 // @author       PermissionDog
 // @updateURL    https://permissiondog.github.io/WBTClient/app/wtbclient.user.js
-// @match        https://www.bilibili.com/*
+// @match        https://www.bilibili.com/video/*
 // @connect      bilibili.com
 // @connect      hdslb.com
 // @grant        GM_log
@@ -62,21 +62,25 @@
         <el-table-column prop="title"></el-table-column>
         <el-table-column>
           <template slot-scope="scope">
-            <div v-for="user in roomListData[scope.$index].users" style="display: inline-block;">
+            <div v-for="user in roomListData[scope.\$index].users" style="display: inline-block;">
               <el-image :src="user.face" style="width: 35px; height: 35px;"></el-image>
             </div>
           </template>
         </el-table-column>
         <el-table-column prop="state"></el-table-column>
         <el-table-column><template slot-scope="scope">
-            <el-button @click="print(scope)">加入</el-button>
+            <el-button @click="joinRoom(roomListData[scope.\$index].roomID);roomListVisible=false;">加入</el-button>
           </template></el-table-column>
       </el-table>
     </template>
   </el-drawer>
 
 </div>`;//END_OF_INJECT_HTML
-    const injectJS = `var wtbApp = new Vue({
+    const injectJS = `const HOST = 'cn-xz-bgp.sakurafrp.com:54911';
+const HTTP_HOST = 'https://' + HOST;
+const WS_HOST = 'wss://' + HOST;
+
+var wtbApp = new Vue({
     el: '#wtb',
     data: {
         roomListVisible: false,
@@ -87,7 +91,7 @@
                 {
                     uid: 25321764,
                     face: "http://i0.hdslb.com/bfs/face/08a66d15ebd9862175213d9e2f8d912d0d646b71.jpg"
-                }, { 
+                }, {
                     uid: 386900246,
                     face: "http://i0.hdslb.com/bfs/face/53cbed71f197e4b774d16aa2f8a27d32870c7bba.jpg"
                 }],
@@ -96,9 +100,11 @@
         }],
 
         createOrDestroyIcon: "el-icon-plus",
-        room: 0,
-        inRoom: false,
-        isHost: false
+        room: 0,//0为不在房间里 非0在房间里
+        isHost: false,
+        uid: 0,
+        bv: bili.bv,
+        myUserInfo: {}
 
     },
     methods: {
@@ -106,67 +112,191 @@
             console.log(v);
         },
         loadRoomList: function () {
-            
-            this.$http.get('https://cn-xz-bgp.sakurafrp.com:54911/room')
-            .then(data => {
-                let d = data.body;
-                data.userIDs = [];
-                d.forEach(ele => {
-                    ele.users.forEach(user => {
-                        data.userIDs.push(user);
-                    });
-                });
-                return new Promise((resolve, reject) => {
-                    
-                    data.userInfo = {};
-                    Promise.all(data.userIDs.map(ele => {
-                        return bili.api.userInfo(ele);
-                    })).then(values => {
-                        values.forEach(v => {
-                            data.userInfo[v.mid] = v;
+
+            this.\$http.get(\`\${HTTP_HOST}/room\`)
+                .then(data => {
+                    let d = data.body;
+                    data.userIDs = [];
+                    d.forEach(ele => {
+                        ele.users.forEach(user => {
+                            data.userIDs.push(user);
                         });
-                        resolve(data);
-                    }).catch(e => reject(e));
-                }); 
-            })
-            .then(data => {
-                let d = data.body;
-                this.roomListData = [];
-                d.forEach(ele => {
-                    this.roomListData.push({
-                        bv: ele.bv,
-                        roomID: ele.roomid,
-                        users: ele.users.map(user => {
-                            return {
-                                uid: user,
-                                face: data.userInfo[user].face
-                            };
-                        }),
-                        state: ele.state
                     });
-                });
-            })
-            .catch(e => console.log(e));
+                    return new Promise((resolve, reject) => {
+
+                        data.userInfo = {};
+                        Promise.all(data.userIDs.map(ele => {
+                            return bili.api.userInfo(ele);
+                        })).then(values => {
+                            values.forEach(v => {
+                                data.userInfo[v.mid] = v;
+                            });
+                            resolve(data);
+                        }).catch(e => reject(e));
+                    });
+                })
+                .then(data => {
+                    let d = data.body;
+                    this.roomListData = [];
+                    d.forEach(ele => {
+                        this.roomListData.push({
+                            bv: ele.bv,
+                            roomID: ele.roomid,
+                            users: ele.users.map(user => {
+                                return {
+                                    uid: user,
+                                    face: data.userInfo[user].face
+                                };
+                            }),
+                            state: ele.state
+                        });
+                    });
+                })
+                .catch(e => console.log(e));
         },
         createOrDestroyRoom: function () {
             if (this.room == 0) {
-                this.createOrDestroyIcon = "el-icon-minus";
-                //创建房间
-                
 
-                this.paused = !this.paused;
+                //创建房间
+                this.\$http.get(\`\${HTTP_HOST}/room/\${this.uid}/create?bv=\${this.bv}&uid=\${this.uid}\`)
+                    .then(res => {
+                        return new Promise((resolve, reject) => {
+                            let data = res.body;
+                            if (data.error) {
+                                reject(data);
+                                return;
+                            }
+                            resolve(res.body.roomID);
+                        });
+                    }).then(room => this.joinRoom(room))
+                    .catch(err => {
+                        this.showErr(err);
+                    });
+
             } else {
-                this.createOrDestroyIcon = "el-icon-plus";
                 //销毁房间
-                this.room = 0;
-                this.inRoom = false;
+                this.ws.send(JSON.stringify({ method: 'DESTROY' }));
             }
         },
         leaveRoom: function () {
+            this.ws.close();
+        },
+        joinRoom: function (roomID) {
+            if (this.room) {
+                this.\$message.warning('你已经在一个房间中了!');
+                return;
+            }
             
+            const url = \`\${WS_HOST}/room/\${roomID}/ws\`;
+            this.ws = new WebSocket(url);
+
+            let ws = this.ws;
+
+            ws.onopen = () => {
+                console.log(\`\${url} 已连接!\`);
+                ws.send(JSON.stringify({ method: 'JOIN', uid: this.uid }));
+
+                this.room = roomID;
+                this.createOrDestroyIcon = "el-icon-minus";
+                this.\$message(\`加入房间 \${roomID}\`);
+            };
+
+            ws.onclose = () => {
+                console.log(\`\${url} 已断开!\`);
+                this.onQuitRoom();
+            };
+
+            ws.onerror = (err) => {
+                this.showErr(err);
+                this.onQuitRoom();
+            };
+
+            ws.onmessage = (msg) => {
+                console.log(msg);
+
+                const data = JSON.parse(msg.data);
+                switch (data.type) {
+                    case 'JOIN':
+                        //有人加入
+                        bili.api.userInfo(data.uid).then(userInfo => {
+                            this.\$message(\`\${userInfo.name} 加入了房间!\`);
+                        }).catch(err => showErr(err));
+                        break;
+
+                    case 'START':
+                        //播放
+                        bili.bPlayer.currentTime = (new Date().getTime() - data.startTime) / 1000 +
+                            data.startPosition;
+
+                        bili.bPlayer.play().catch(err => showErr(err));
+                        break;
+
+                    case 'PAUSE':
+                        //暂停
+                        bili.bPlayer.pause();
+                        break;
+                }
+            };
+
+        },
+        onQuitRoom: function () {
+
+            this.ws = null;
+            this.room = 0;
+            this.createOrDestroyIcon = "el-icon-plus";
+        },
+        showErr: function (err) {
+            this.\$message.error('发生了一个错误!请打开F12查看详情');
+            console.log(err);
         }
     }
 });
+
+bili.api.myUserInfo().then(data => {
+
+    wtbApp.myUserInfo = data;
+    wtbApp.uid = wtbApp.myUserInfo.mid;
+}).then(() => {
+    return wtbApp.\$http.get(\`\${HTTP_HOST}/room\`);
+}).then(data => {
+    data.body.forEach(r => {
+        if (r.roomid == wtbApp.uid) {
+            wtbApp.joinRoom(r.roomid);
+        }
+    });
+}).then(() => {
+    const sendTime = () => {
+        if (!wtbApp.room) {
+            return;
+        }
+    
+        wtbApp.ws.send(JSON.stringify({
+            method: 'START',
+            uid: wtbApp.uid,
+            startTime: new Date().getTime(),
+            startPosition: bili.bPlayer.currentTime
+        }));
+    };
+    bili.bPlayer.onplay = sendTime;
+    
+    bili.bPlayer.onpause = () => {
+        if (!wtbApp.room) {
+            return;
+        }
+    
+        wtbApp.ws.send(JSON.stringify({
+            method: 'PAUSE',
+            uid: wtbApp.uid
+        }));
+    };
+    
+    bili.bPlayer.onseeked = sendTime;
+})
+.catch(err => {
+    console.log(err);
+    console.log("初始化失败");
+});
+
 `;//END_OF_INJECT_JS
 
 
@@ -346,10 +476,15 @@
                     )).catch(err => reject(err));
             });
         },
-        bPlayer: document.querySelector('.bilibili-player-video > video')
+        bPlayer: document.querySelector('.bilibili-player-video > video'),
+        bv: function() {
+            let f = /BV[0-9a-zA-Z]+/.exec(document.URL);
+            return (f) ? f[0] : "";
+        }(),
+        
     };
     
-    if (!bili.bPlayer) {
+    if (!bili.bv) {
         return;
     }
 

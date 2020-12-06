@@ -24,8 +24,10 @@ func replaceFile(dstFile string, srcFile string, regex string) {
 	reg := regexp.MustCompile(regex)
 
 	find := reg.FindSubmatch(dst)[1]
-	res := strings.ReplaceAll(string(dst), string(find), string(src))
-	res = strings.ReplaceAll(res, "`", "\\`")
+	newSrc := strings.ReplaceAll(string(src), "`", "\\`")
+	newSrc = strings.ReplaceAll(newSrc, "$", "\\$")
+	res := strings.ReplaceAll(string(dst), string(find), newSrc)
+
 	//res := reg.ReplaceAll(dst, src)
 	//fmt.Println(string(res))
 	err = ioutil.WriteFile(dstFile, []byte(res), 0)
