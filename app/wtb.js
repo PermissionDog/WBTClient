@@ -26,7 +26,8 @@ var wtbApp = new Vue({
         isHost: false,
         uid: 0,
         bv: bili.bv,
-        myUserInfo: {}
+        myUserInfo: {},
+        count: 0//事件计数 防止自己触发自己
 
     },
     methods: {
@@ -119,7 +120,7 @@ var wtbApp = new Vue({
                 window.open(`https://www.bilibili.com/video/${room.bv}`);
                 return;
             }
-            
+
             const url = `${WS_HOST}/room/${roomID}/ws`;
             this.ws = new WebSocket(url);
 
@@ -158,27 +159,23 @@ var wtbApp = new Vue({
                         break;
 
                     case 'START':
-                        //播放
+                        //播放;
+
+                        this.count += 2;
                         bili.bPlayer.currentTime = (new Date().getTime() - data.startTime) / 1000 +
                             data.startPosition;
 
-                        temp = bili.bPlayer.onplay;
-                        bili.bPlayer.onplay = null;
-                        bili.bPlayer.play().then(() => bili.bPlayer.onplay = temp)
-                            .catch(err => {
-                                showErr(err);
-                                bili.bPlayer.onplay = temp;
+                        bili.bPlayer.play().catch(err => {
+                            showErr(err);
+                            this.count -= 2;
                         });
-                        
+
                         break;
 
                     case 'PAUSE':
                         //暂停
-                        
-                        temp = bili.bPlayer.onpause;
-                        bili.bPlayer.onpause = null;
+                        this.count++;
                         bili.bPlayer.pause();
-                        bili.bPlayer.onpause = temp;
                         break;
                 }
             };
@@ -222,7 +219,11 @@ bili.api.myUserInfo().then(data => {
         if (!wtbApp.room) {
             return;
         }
-    
+        if (wtbApp.count) {
+            count--;
+            return;
+        }
+
         wtbApp.ws.send(JSON.stringify({
             method: 'START',
             uid: wtbApp.uid,
@@ -231,23 +232,27 @@ bili.api.myUserInfo().then(data => {
         }));
     };
     bili.bPlayer.onplay = sendTime;
-    
+
     bili.bPlayer.onpause = () => {
         if (!wtbApp.room) {
             return;
         }
-    
+        if (wtbApp.count) {
+            count--;
+            return;
+        }
+
         wtbApp.ws.send(JSON.stringify({
             method: 'PAUSE',
             uid: wtbApp.uid
         }));
     };
-    
+
     bili.bPlayer.onseeked = sendTime;
 })
-.catch(err => {
-    console.log(err);
-    console.log("初始化失败");
-});
+    .catch(err => {
+        console.log(err);
+        console.log("初始化失败");
+    });
 
 wtbApp.loadRoomList();
