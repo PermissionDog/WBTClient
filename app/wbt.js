@@ -2,8 +2,8 @@ const HOST = 'cn-xz-bgp.sakurafrp.com:54911';
 const HTTP_HOST = 'https://' + HOST;
 const WS_HOST = 'wss://' + HOST;
 
-var wtbApp = new Vue({
-    el: '#wtb',
+var wbtApp = new Vue({
+    el: '#wbt',
     data: {
         roomListVisible: false,
         settingVisible: false,
@@ -117,7 +117,7 @@ var wtbApp = new Vue({
             }
             if (room.bv != this.bv) {
                 //跳转到bv号对应页面
-                window.open(`https://www.bilibili.com/video/${room.bv}`);
+                this.switchRoom(room.bv);
                 return;
             }
 
@@ -160,7 +160,6 @@ var wtbApp = new Vue({
 
                     case 'START':
                         //播放;
-
                         this.count++;
                         bili.bPlayer.currentTime = (new Date().getTime() - data.startTime) / 1000 +
                             data.startPosition;
@@ -171,7 +170,6 @@ var wtbApp = new Vue({
                                 showErr(err);
                             });
                         }
-
                         break;
 
                     case 'PAUSE':
@@ -182,9 +180,19 @@ var wtbApp = new Vue({
                         this.count++;
                         bili.bPlayer.pause();
                         break;
+                    case 'SWITCH':
+                        //切换房间
+                        this.switchRoom(data.bv);
+                        break;
                 }
             };
 
+        },
+        switchRoom: function (roomID) {
+            this.config.bv = room.bv;
+            wbt.saveConfig(this.config);
+            window.location.href = `https://www.bilibili.com/video/${roomID}`;
+            
         },
         onQuitRoom: function () {
 
@@ -204,60 +212,69 @@ var wtbApp = new Vue({
                 }
             }
         }
+    },
+    created: function() {
+        bili.api.myUserInfo().then(data => {
+
+            this.myUserInfo = data;
+            this.uid = this.myUserInfo.mid;
+
+            let conf = wbt.getConfig();
+            this.config = conf;
+            if (conf.bv) {
+                this.joinRoom(conf.bv);
+            }
+        })
+        // .then(() => {
+        //     return this.$http.get(`${HTTP_HOST}/room`);
+        // }).then(data => {
+        //     data.body.forEach(r => {
+        //         if (r.roomid == this.uid) {
+        //             this.joinRoom(r.roomid);
+        //         }
+        //     });
+        // })
+        .then(() => {
+            const sendTime = () => {
+                if (!this.room) {
+                    return;
+                }
+                if (this.count) {
+                    this.count--;
+                    return;
+                }
+        
+                this.ws.send(JSON.stringify({
+                    method: 'START',
+                    uid: this.uid,
+                    startTime: new Date().getTime(),
+                    startPosition: bili.bPlayer.currentTime
+                }));
+            };
+            bili.bPlayer.onplay = sendTime;
+        
+            bili.bPlayer.onpause = () => {
+                if (!this.room) {
+                    return;
+                }
+                if (this.count) {
+                    this.count--;
+                    return;
+                }
+        
+                this.ws.send(JSON.stringify({
+                    method: 'PAUSE',
+                    uid: this.uid
+                }));
+            };
+        
+            bili.bPlayer.onseeked = sendTime;
+        })
+            .catch(err => {
+                console.log(err);
+                console.log("初始化失败");
+            });
     }
 });
 
-bili.api.myUserInfo().then(data => {
 
-    wtbApp.myUserInfo = data;
-    wtbApp.uid = wtbApp.myUserInfo.mid;
-}).then(() => {
-    return wtbApp.$http.get(`${HTTP_HOST}/room`);
-}).then(data => {
-    data.body.forEach(r => {
-        if (r.roomid == wtbApp.uid) {
-            wtbApp.joinRoom(r.roomid);
-        }
-    });
-}).then(() => {
-    const sendTime = () => {
-        if (!wtbApp.room) {
-            return;
-        }
-        if (wtbApp.count) {
-            wtbApp.count--;
-            return;
-        }
-
-        wtbApp.ws.send(JSON.stringify({
-            method: 'START',
-            uid: wtbApp.uid,
-            startTime: new Date().getTime(),
-            startPosition: bili.bPlayer.currentTime
-        }));
-    };
-    bili.bPlayer.onplay = sendTime;
-
-    bili.bPlayer.onpause = () => {
-        if (!wtbApp.room) {
-            return;
-        }
-        if (wtbApp.count) {
-            wtbApp.count--;
-            return;
-        }
-
-        wtbApp.ws.send(JSON.stringify({
-            method: 'PAUSE',
-            uid: wtbApp.uid
-        }));
-    };
-
-    bili.bPlayer.onseeked = sendTime;
-})
-    .catch(err => {
-        console.log(err);
-        console.log("初始化失败");
-    });
-
-wtbApp.loadRoomList();

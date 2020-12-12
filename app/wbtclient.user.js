@@ -1,10 +1,10 @@
 // ==UserScript==
-// @name         WTBClient
-// @namespace    github.com/PermissionDog/WTBClient
+// @name         wbtClient
+// @namespace    github.com/PermissionDog/wbtClient
 // @version      0.8
 // @description  一起看B客户端
 // @author       PermissionDog
-// @updateURL    https://permissiondog.github.io/WBTClient/app/wtbclient.user.js
+// @updateURL    https://permissiondog.github.io/WBTClient/app/wbtclient.user.js
 // @match        https://www.bilibili.com/video/*
 // @connect      bilibili.com
 // @connect      hdslb.com
@@ -23,7 +23,7 @@
     const injectHTML = `<!-- 引入样式 -->
 <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
 <style>
-  #wtb-nav {
+  #wbt-nav {
     position: fixed;
     right: 0;
     top: 35%
@@ -39,8 +39,8 @@
 </style>
 
 
-<div id="wtb" v-cloak>
-  <div id="wtb-nav">
+<div id="wbt" v-cloak>
+  <div id="wbt-nav">
     <el-row>
       <el-button @click="roomListVisible = true" type="primary" icon="el-icon-film" circle></button>
     </el-row>
@@ -81,8 +81,8 @@
 const HTTP_HOST = 'https://' + HOST;
 const WS_HOST = 'wss://' + HOST;
 
-var wtbApp = new Vue({
-    el: '#wtb',
+var wbtApp = new Vue({
+    el: '#wbt',
     data: {
         roomListVisible: false,
         settingVisible: false,
@@ -196,7 +196,7 @@ var wtbApp = new Vue({
             }
             if (room.bv != this.bv) {
                 //跳转到bv号对应页面
-                window.open(\`https://www.bilibili.com/video/\${room.bv}\`);
+                this.switchRoom(room.bv);
                 return;
             }
 
@@ -239,7 +239,6 @@ var wtbApp = new Vue({
 
                     case 'START':
                         //播放;
-
                         this.count++;
                         bili.bPlayer.currentTime = (new Date().getTime() - data.startTime) / 1000 +
                             data.startPosition;
@@ -250,7 +249,6 @@ var wtbApp = new Vue({
                                 showErr(err);
                             });
                         }
-
                         break;
 
                     case 'PAUSE':
@@ -261,9 +259,19 @@ var wtbApp = new Vue({
                         this.count++;
                         bili.bPlayer.pause();
                         break;
+                    case 'SWITCH':
+                        //切换房间
+                        this.switchRoom(data.bv);
+                        break;
                 }
             };
 
+        },
+        switchRoom: function (roomID) {
+            this.config.bv = room.bv;
+            wbt.saveConfig(this.config);
+            window.location.href = \`https://www.bilibili.com/video/\${roomID}\`;
+            
         },
         onQuitRoom: function () {
 
@@ -283,63 +291,72 @@ var wtbApp = new Vue({
                 }
             }
         }
+    },
+    created: function() {
+        bili.api.myUserInfo().then(data => {
+
+            this.myUserInfo = data;
+            this.uid = this.myUserInfo.mid;
+
+            let conf = wbt.getConfig();
+            this.config = conf;
+            if (conf.bv) {
+                this.joinRoom(conf.bv);
+            }
+        })
+        // .then(() => {
+        //     return this.\$http.get(\`\${HTTP_HOST}/room\`);
+        // }).then(data => {
+        //     data.body.forEach(r => {
+        //         if (r.roomid == this.uid) {
+        //             this.joinRoom(r.roomid);
+        //         }
+        //     });
+        // })
+        .then(() => {
+            const sendTime = () => {
+                if (!this.room) {
+                    return;
+                }
+                if (this.count) {
+                    this.count--;
+                    return;
+                }
+        
+                this.ws.send(JSON.stringify({
+                    method: 'START',
+                    uid: this.uid,
+                    startTime: new Date().getTime(),
+                    startPosition: bili.bPlayer.currentTime
+                }));
+            };
+            bili.bPlayer.onplay = sendTime;
+        
+            bili.bPlayer.onpause = () => {
+                if (!this.room) {
+                    return;
+                }
+                if (this.count) {
+                    this.count--;
+                    return;
+                }
+        
+                this.ws.send(JSON.stringify({
+                    method: 'PAUSE',
+                    uid: this.uid
+                }));
+            };
+        
+            bili.bPlayer.onseeked = sendTime;
+        })
+            .catch(err => {
+                console.log(err);
+                console.log("初始化失败");
+            });
     }
 });
 
-bili.api.myUserInfo().then(data => {
 
-    wtbApp.myUserInfo = data;
-    wtbApp.uid = wtbApp.myUserInfo.mid;
-}).then(() => {
-    return wtbApp.\$http.get(\`\${HTTP_HOST}/room\`);
-}).then(data => {
-    data.body.forEach(r => {
-        if (r.roomid == wtbApp.uid) {
-            wtbApp.joinRoom(r.roomid);
-        }
-    });
-}).then(() => {
-    const sendTime = () => {
-        if (!wtbApp.room) {
-            return;
-        }
-        if (wtbApp.count) {
-            wtbApp.count--;
-            return;
-        }
-
-        wtbApp.ws.send(JSON.stringify({
-            method: 'START',
-            uid: wtbApp.uid,
-            startTime: new Date().getTime(),
-            startPosition: bili.bPlayer.currentTime
-        }));
-    };
-    bili.bPlayer.onplay = sendTime;
-
-    bili.bPlayer.onpause = () => {
-        if (!wtbApp.room) {
-            return;
-        }
-        if (wtbApp.count) {
-            wtbApp.count--;
-            return;
-        }
-
-        wtbApp.ws.send(JSON.stringify({
-            method: 'PAUSE',
-            uid: wtbApp.uid
-        }));
-    };
-
-    bili.bPlayer.onseeked = sendTime;
-})
-    .catch(err => {
-        console.log(err);
-        console.log("初始化失败");
-    });
-
-wtbApp.loadRoomList();
 `;//END_OF_INJECT_JS
 
 
@@ -533,16 +550,25 @@ wtbApp.loadRoomList();
 
     unsafeWindow.bili = bili;
     
-
+    unsafeWindow.wbt = {
+        getConfig: function () {
+            return GM_getValue('config', {
+                bv: ''
+            });
+        },
+        saveConfig: function (cfg) {
+            GM_setValue('config', cfg);
+        }
+    };
     
     //bili.sessions().then(data => GM_log(data)).catch(err => GM_log(err));
-    GM_log(bili.bPlayer);
-    bili.bPlayer.onpause = function () {
-        GM_log(`已暂停! 当前播放时间: ${bili.bPlayer.currentTime}`);
-    };
-    bili.bPlayer.onplay = function () {
-        GM_log('已播放!');
-    };
+    // GM_log(bili.bPlayer);
+    // bili.bPlayer.onpause = function () {
+    //     GM_log(`已暂停! 当前播放时间: ${bili.bPlayer.currentTime}`);
+    // };
+    // bili.bPlayer.onplay = function () {
+    //     GM_log('已播放!');
+    // };
 
     
     
