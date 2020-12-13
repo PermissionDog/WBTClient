@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         wbtClient
 // @namespace    github.com/PermissionDog/wbtClient
-// @version      0.9
+// @version      0.10
 // @description  一起看B客户端
 // @author       PermissionDog
 // @updateURL    https://permissiondog.github.io/WBTClient/app/wbtclient.user.js
@@ -343,6 +343,7 @@ var wbtApp = new Vue({
                         method: 'SWITCH',
                         uid: this.uid,
                         bv: this.bv,
+                        title: this.title
                     }));
                 });
         },

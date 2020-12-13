@@ -249,6 +249,7 @@ var wbtApp = new Vue({
                         method: 'SWITCH',
                         uid: this.uid,
                         bv: this.bv,
+                        title: this.title
                     }));
                 });
         },
