@@ -20,34 +20,47 @@
 <div id="wbt" v-cloak>
   <div id="wbt-nav">
     <el-row>
-      <el-button @click="roomListVisible = true" type="primary" icon="el-icon-film" circle></button>
+      <el-tooltip effect="dark" content="看B列表" placement="left">
+        <el-button @click="roomListVisible = true" type="primary" icon="el-icon-film" circle></button>
+      </el-tooltip>
     </el-row>
     <el-row>
-      <el-button @click="createOrDestroyRoom" type="primary" :icon="createOrDestroyIcon" circle></el-button>
+      <el-tooltip effect="dark" :content="createOrDestroyTooltip" placement="left">
+        <el-button @click="createOrDestroyRoom" type="primary" :icon="createOrDestroyIcon" circle></el-button>
+      </el-tooltip>
     </el-row>
-    <el-row  v-show="room">
-      <el-button @click="leaveRoom" type="primary" icon="el-icon-circle-close" circle></el-button>
+    <el-row v-show="room">
+      <el-tooltip effect="dark" content="离开房间" placement="left">
+        <el-button @click="leaveRoom" type="primary" icon="el-icon-circle-close" circle></el-button>
+      </el-tooltip>
     </el-row>
     <el-row>
-      <el-button @click="settingVisible = true" type="primary" icon="el-icon-s-tools" circle></button>
+      <el-tooltip effect="dark" content="设定" placement="left">
+        <el-button @click="settingVisible = true" type="primary" icon="el-icon-s-tools" circle></button>
+      </el-tooltip>
+    </el-row>
+    <el-row v-show="otherRoom && room != otherRoom">
+      <el-tooltip effect="dark" content="呼叫房间其他人" placement="left">
+        <el-button @click="callOthers" type="primary" icon="el-icon-phone" circle></el-button>
+      </el-tooltip>
     </el-row>
   </div>
 
 
-  <el-drawer :with-header="false" :visible.sync="roomListVisible" direction="rtl" size="45%" v-on:open="loadRoomList">
+  <el-drawer :with-header="false" :visible.sync="roomListVisible" direction="rtl" size="50%" v-on:open="loadRoomList">
     <template>
       <el-table :data="roomListData" stripe style="width: 100%">
-        <el-table-column prop="bv"></el-table-column>
-        <el-table-column prop="title"></el-table-column>
-        <el-table-column>
+        <!-- <el-table-column prop="bv"></el-table-column> -->
+        <el-table-column prop="title" label="标题" width="300"></el-table-column>
+        <el-table-column label="在线用户" width="150">
           <template slot-scope="scope">
-            <div v-for="user in roomListData[scope.$index].users" style="display: inline-block;">
-              <el-image :src="user.face" style="width: 35px; height: 35px;"></el-image>
-            </div>
+            <el-col :span="8" v-for="user in roomListData[scope.$index].users" style="display: inline-block;">
+              <el-avatar :src="user.face" :size="40"></el-avatar>
+            </el-col>
           </template>
         </el-table-column>
-        <el-table-column prop="state"></el-table-column>
-        <el-table-column><template slot-scope="scope">
+        <el-table-column label="状态" prop="stateStr" width="70"></el-table-column>
+        <el-table-column label="操作" width="80"><template slot-scope="scope">
             <el-button @click="joinRoom(roomListData[scope.$index].roomID);roomListVisible=false;">加入</el-button>
           </template></el-table-column>
       </el-table>
