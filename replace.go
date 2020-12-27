@@ -8,8 +8,8 @@ import (
 
 func main() {
 	copyFile("wbtclient.user.js", "app/wbtclient.user.js")
-	replaceFile("app/wbtclient.user.js", "wbt.js", "(?sU)injectJS\\s=\\s`(.*)`;//END_OF_INJECT_JS")
-	replaceFile("app/wbtclient.user.js", "wbt.html", "(?sU)injectHTML\\s=\\s`(.*)`;//END_OF_INJECT_HTML")
+	replaceFile("app/wbtclient.user.js", "wbt.js", "(?sU)injectJS\\s=\\s`(.+)`;//END_OF_INJECT_JS")
+	replaceFile("app/wbtclient.user.js", "wbt.html", "(?sU)injectHTML\\s=\\s`(.+)`;//END_OF_INJECT_HTML")
 }
 
 func copyFile(src string, dst string) {

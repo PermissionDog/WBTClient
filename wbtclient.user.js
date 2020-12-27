@@ -26,25 +26,7 @@
     const injectJS = `插入JS`;//END_OF_INJECT_JS
 
 
-    function loadJS(js) {
-        return new Promise(resolve => {
-            let s = document.createElement('script');
-            s.src = js;
-            s.onload = resolve;
-            document.head.appendChild(s);
-        });
-    }
-    loadJS('https://cdn.jsdelivr.net/npm/vue/dist/vue.js')
-        .then(() => loadJS('https://unpkg.com/element-ui/lib/index.js'))
-        .then(() => loadJS('https://cdn.jsdelivr.net/npm/vue-resource@1.5.1'))
-        .then(() => {
-            let s2 = document.createElement('div');
-            s2.innerHTML = injectHTML;
-            
-            document.body.appendChild(s2);
-            unsafeWindow.eval(injectJS);
-        });
-
+    
     const bili = {
         util: {
             //抓包得到的函数
@@ -202,16 +184,23 @@
                     )).catch(err => reject(err));
             });
         },
-        bPlayer: document.querySelector('.bilibili-player-video > video'),
-        bv: function() {
-            let f = /BV[0-9a-zA-Z]+/.exec(document.URL);
-            return (f) ? f[0] : "";
-        }(),
-        title: document.querySelector("#viewbox_report > h1").title,
-        
+        videoData: unsafeWindow.vd,
+        bPlayer: document.querySelector('.bilibili-player-video > video'), 
+        get title() {
+            return this.videoData.title;
+        },
+        get bv() {
+            return this.videoData.bvid;
+        },
+        get videos() {
+            return this.videoData.videos;
+        },
+        get isMultiPages() {
+            return this.videos != 1;
+        }
     };
     
-    if (!bili.bv) {
+    if (!bili.videoData) {
         return;
     }
 
@@ -229,6 +218,26 @@
             GM_setValue('config', cfg);
         }
     };
+
+    function loadJS(js) {
+        return new Promise(resolve => {
+            let s = document.createElement('script');
+            s.src = js;
+            s.onload = resolve;
+            document.head.appendChild(s);
+        });
+    }
+    loadJS('https://cdn.jsdelivr.net/npm/vue/dist/vue.js')
+        .then(() => loadJS('https://unpkg.com/element-ui/lib/index.js'))
+        .then(() => loadJS('https://cdn.jsdelivr.net/npm/vue-resource@1.5.1'))
+        .then(() => {
+            let s2 = document.createElement('div');
+            s2.innerHTML = injectHTML;
+            
+            document.body.appendChild(s2);
+            unsafeWindow.eval(injectJS);
+        });
+
     
     //bili.sessions().then(data => GM_log(data)).catch(err => GM_log(err));
     // GM_log(bili.bPlayer);
