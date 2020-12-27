@@ -7,13 +7,26 @@ import (
 )
 
 func main() {
-	replaceFile("app/wbtclient.user.js", "app/wbt.js", "(?sU)injectJS\\s=\\s`(.+)`;//END_OF_INJECT_JS")
-	replaceFile("app/wbtclient.user.js", "app/wbt.html", "(?sU)injectHTML\\s=\\s`(.+)`;//END_OF_INJECT_HTML")
+	copyFile("wbtclient.user.js", "app/wbtclient.user.js")
+	replaceFile("app/wbtclient.user.js", "wbt.js", "(?sU)injectJS\\s=\\s`(.*)`;//END_OF_INJECT_JS")
+	replaceFile("app/wbtclient.user.js", "wbt.html", "(?sU)injectHTML\\s=\\s`(.*)`;//END_OF_INJECT_HTML")
 }
 
-func replaceFile(dstFile string, srcFile string, regex string) {
+func copyFile(src string, dst string) {
 
-	src, err := ioutil.ReadFile(srcFile)
+	data, err := ioutil.ReadFile(src)
+	if err != nil {
+		panic(err)
+	}
+	err = ioutil.WriteFile(dst, data, 0666)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func replaceFile(dstFile string, file string, regex string) {
+
+	src, err := ioutil.ReadFile(file)
 	if err != nil {
 		panic(err)
 	}
@@ -30,7 +43,7 @@ func replaceFile(dstFile string, srcFile string, regex string) {
 
 	//res := reg.ReplaceAll(dst, src)
 	//fmt.Println(string(res))
-	err = ioutil.WriteFile(dstFile, []byte(res), 0)
+	err = ioutil.WriteFile(dstFile, []byte(res), 0666)
 	if err != nil {
 		panic(err)
 	}
