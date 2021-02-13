@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         wbtClient
 // @namespace    github.com/PermissionDog/wbtClient
-// @version      0.10
+// @version      0.11
 // @description  一起看B客户端
 // @author       PermissionDog
 // @updateURL    https://permissiondog.github.io/WBTClient/app/wbtclient.user.js
@@ -227,7 +227,7 @@
             document.head.appendChild(s);
         });
     }
-    loadJS('https://cdn.jsdelivr.net/npm/vue/dist/vue.js')
+    loadJS('https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js')
         .then(() => loadJS('https://unpkg.com/element-ui/lib/index.js'))
         .then(() => loadJS('https://cdn.jsdelivr.net/npm/vue-resource@1.5.1'))
         .then(() => {
